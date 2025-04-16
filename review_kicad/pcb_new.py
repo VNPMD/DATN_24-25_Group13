@@ -21041,5 +21041,3 @@ class PCB_DIM_CENTER(PCB_DIMENSION_BASE):
  
 # Register PCB_DIM_CENTER in _pcbnew:
 _pcbnew.PCB_DIM_CENTER_swigregister(PCB_DIM_CENTER)
-
- 
