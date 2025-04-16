@@ -1,0 +1,5 @@
+drawing.py module vẽ hình
+pad_editor.py module xây dựng khung editor nhập thông Tin 
+pad.py module vẽ Pad
+zoomable_graphics_view.py module vẽ và zoom 
+main_app module xây dựng giao diện
