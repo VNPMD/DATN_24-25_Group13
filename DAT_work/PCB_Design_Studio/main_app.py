@@ -1,8 +1,9 @@
 import  traceback
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QDockWidget, QTreeWidget, QTreeWidgetItem,
+    QMainWindow, QDockWidget, QTreeWidget, QTreeWidgetItem,
     QWidget, QGridLayout, QLabel, QLineEdit, QComboBox, QTabWidget,
-    QGraphicsScene, QListWidget, QToolBar, QAction, QMessageBox, QDialog
+    QGraphicsScene, QListWidget, QToolBar, QAction, QMessageBox,
+    QDialog, QPushButton
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPen, QColor
@@ -10,88 +11,130 @@ from PyQt5.QtGui import QPen, QColor
 from drawing import DrawingApp
 from pad_editor import PadEditor
 from pad import Pad
+from layer_manager import LayerManager
 
 class main_app(QMainWindow):
     def __init__(self):
         try:
-            super().__init__()
-            self.setWindowTitle('PCB Design Studio')
-            self.setGeometry(100, 100, 1200, 800)
-            self.drawing_app = DrawingApp()  # Create an instance of DrawingApp
-            self.init_ui()  # Call init_ui method
+            super().__init__()  # Gọi hàm khởi tạo của lớp cha QMainWindow.
+            self.setWindowTitle('PCB Design Studio')  # Đặt tiêu đề cho cửa sổ chính.
+            self.setGeometry(100, 100, 1200, 800)  # Đặt vị trí và kích thước cửa sổ (x, y, width, height).
+            self.drawing_app = DrawingApp()  # Tạo một instance của lớp DrawingApp (ứng dụng vẽ).
+            self.init_ui()  # Gọi phương thức khởi tạo giao diện người dùng.
         except Exception as e:
-            # Fallback error handling
-            print(f"Initialization Error: {e}")
-            print(traceback.format_exc())
-            QMessageBox.critical(None, "Initialization Error", str(e))
+            # Xử lý lỗi nếu xảy ra trong quá trình khởi tạo.
+            print(f"Initialization Error: {e}")  # In lỗi ra console.
+            print(traceback.format_exc())  # In chi tiết lỗi ra console.
+            QMessageBox.critical(None, "Initialization Error", str(e))  # Hiển thị hộp thoại thông báo lỗi.
 
     def init_ui(self):
         try:
-            # Create main layout components
-            self.create_menu_bar()
-            self.create_toolbar()
-            self.create_left_sidebar()
-            self.create_right_sidebar()
-            self.create_central_canvas()
-            self.create_bottom_panel()
+            # Tạo các thành phần giao diện chính
+            self.create_menu_bar()  # Tạo thanh menu.
+            self.create_toolbar()  # Tạo thanh công cụ.
+            self.create_left_sidebar()  # Tạo thanh bên trái.
+            self.create_right_sidebar()  # Tạo thanh bên phải.
+            self.create_central_canvas()  # Tạo khu vực vẽ chính.
+            self.create_bottom_panel()  # Tạo bảng thông báo ở dưới cùng.
         except Exception as e:
-            # Fallback error handling
-            print(f"UI Creation Error: {e}")
-            print(traceback.format_exc())
-            QMessageBox.critical(None, "UI Creation Error", str(e))
-
+            # Xử lý lỗi nếu xảy ra trong quá trình tạo giao diện.
+            print(f"UI Creation Error: {e}")  # In lỗi ra console.
+            print(traceback.format_exc())  # In chi tiết lỗi ra console.
+            QMessageBox.critical(None, "UI Creation Error", str(e))  # Hiển thị hộp thoại thông báo lỗi.
     def create_menu_bar(self):
-        # Create menubar if it doesn't exist
-        if not hasattr(self, 'menubar'):
-            self.menubar = self.menuBar()
+        if not hasattr(self, 'menubar'):  # Kiểm tra xem menubar đã tồn tại chưa.
+            self.menubar = self.menuBar()  # Tạo thanh menu.
 
         # File Menu
-        file_menu = self.menubar.addMenu('File')
-        new_project_action = QAction('New Project', self)
-        open_project_action = QAction('Open Project', self)
-        save_action = QAction('Save', self)
-        file_menu.addAction(new_project_action)
+        file_menu = self.menubar.addMenu('File')  # Thêm menu "File".
+        new_project_action = QAction('New Project', self)  # Tạo hành động "New Project".
+        open_project_action = QAction('Open Project', self)  # Tạo hành động "Open Project".
+        save_action = QAction('Save', self)  # Tạo hành động "Save".
+        setting_action = QAction('Settings', self)  # Tạo hành động "Settings".
+        setting_action.triggered.connect(self.open_settings_dialog)  # Kết nối hành động với phương thức mở cài đặt.
+        
+        file_menu.addAction(new_project_action)  # Thêm hành động vào menu "File".
         file_menu.addAction(open_project_action)
         file_menu.addAction(save_action)
-
+        file_menu.addSeparator()  # Thêm một đường phân cách.
+        file_menu.addAction(setting_action)  # Thêm hành động "Settings" vào menu "File".
         # Edit Menu
-        edit_menu = self.menubar.addMenu('Edit')
-        undo_action = QAction('Undo', self)
-        redo_action = QAction('Redo', self)
-        edit_menu.addAction(undo_action)
+        edit_menu = self.menubar.addMenu('Edit')  # Thêm menu "Edit".
+        undo_action = QAction('Undo', self)  # Tạo hành động "Undo".
+        redo_action = QAction('Redo', self)  # Tạo hành động "Redo".
+        edit_menu.addAction(undo_action)  # Thêm hành động vào menu "Edit".
         edit_menu.addAction(redo_action)
 
         # Design Menu
-        design_menu = self.menubar.addMenu('Design')
-        create_footprint_action = QAction('Create Footprint', self)
-        layer_manager_action = QAction('Layer Manager', self)
-        design_menu.addAction(create_footprint_action)
+        design_menu = self.menubar.addMenu('Design')  # Thêm menu "Design".
+        create_footprint_action = QAction('Create Footprint', self)  # Tạo hành động "Create Footprint".
+        layer_manager_action = QAction('Layer Manager', self)  # Tạo hành động "Layer Manager".
+        design_menu.addAction(create_footprint_action)  # Thêm hành động vào menu "Design".
         design_menu.addAction(layer_manager_action)
-    # Design tootbar 
+        # Design tootbar 
+    def open_settings_dialog(self):
+        """
+        Hiển thị hộp thoại cài đặt.
+        """
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Settings")
+        layout = QGridLayout(dialog)
+
+        # Cài đặt màu cho các layer
+        layer_settings_label = QLabel("Layer Settings:")
+        layout.addWidget(layer_settings_label, 0, 0, 1, 2)
+
+        # Tạo các trường nhập liệu cho từng layer
+        row = 1
+        self.layer_inputs = {}
+        toolbar = QToolBar('Layer Settings')  # Tạo thanh công cụ cho cài đặt layer.
+        self.addToolBar(toolbar)  # Thêm thanh công cụ vào cửa sổ chính.
+
+        for layer_name, layer_data in self.layer_manager.layers.items():
+            label = QLabel(f"{layer_name} Color:")
+            color_input = QLineEdit(layer_data["color"].name())  # Hiển thị màu hiện tại
+            color_input.triggered.connect(self.choose_drawing_color)  # Kết nối với hàm chọn màu
+            toolbar.addAction(color_input)  # Thêm hành động vào thanh công cụ
+
+            layout.addWidget(label, row, 0)
+            layout.addWidget(color_input, row, 1)
+            self.layer_inputs[layer_name] = color_input
+            row += 1
+
+        # Nút lưu
+        save_button = QPushButton("Save")
+        save_button.clicked.connect(lambda: self.save_layer_settings(dialog))
+        layout.addWidget(save_button, row, 0, 1, 2)
+
+        dialog.setLayout(layout)
+        dialog.exec_()
     def create_toolbar(self):
-        toolbar = QToolBar('Design Tools')
-        self.addToolBar(toolbar)
+        toolbar = QToolBar('Design Tools')  # Tạo thanh công cụ với tiêu đề "Design Tools".
+        self.addToolBar(toolbar)  # Thêm thanh công cụ vào cửa sổ chính.
 
-        # Drawing tools
-        draw_line_action = QAction('Draw Line', self)
-        draw_line_action.triggered.connect(lambda: self.set_drawing_mode("line"))
-        toolbar.addAction(draw_line_action)
+        # Công cụ vẽ
+        draw_line_action = QAction('Draw Line', self)  # Tạo hành động "Draw Line".
+        draw_line_action.triggered.connect(lambda: self.set_drawing_mode("line"))  # Kết nối hành động với phương thức.
+        toolbar.addAction(draw_line_action)  # Thêm hành động vào thanh công cụ.
 
-        draw_rect_action = QAction('Draw Rectangle', self)
+        draw_rect_action = QAction('Draw Rectangle', self)  # Tạo hành động "Draw Rectangle".
         draw_rect_action.triggered.connect(lambda: self.set_drawing_mode("rect"))
         toolbar.addAction(draw_rect_action)
 
-        draw_circle_action = QAction('Draw Circle', self)
+        draw_circle_action = QAction('Draw Circle', self)  # Tạo hành động "Draw Circle".
         draw_circle_action.triggered.connect(lambda: self.set_drawing_mode("circle"))
         toolbar.addAction(draw_circle_action)
 
-        color_action = QAction('Choose Color', self)
-        color_action.triggered.connect(self.choose_drawing_color)
+        # Công cụ chọn màu
+        color_action = QAction('Choose Color', self)  # Tạo hành động "Choose Color".
+        color_action.triggered.connect(self.choose_drawing_color)  # Kết nối hành động với phương thức.
         toolbar.addAction(color_action)
 
-        toolbar.addSeparator()
-        pad_editor_action = QAction('Pad Editor', self)
-        pad_editor_action.triggered.connect(self.show_pad_editor)
+        toolbar.addSeparator()  # Thêm một đường phân cách.
+
+        # Công cụ chỉnh sửa pad
+        pad_editor_action = QAction('Pad Editor', self)  # Tạo hành động "Pad Editor".
+        pad_editor_action.triggered.connect(self.show_pad_editor)  # Kết nối hành động với phương thức.
         toolbar.addAction(pad_editor_action)
 
     def set_drawing_mode(self, mode):
@@ -105,26 +148,45 @@ class main_app(QMainWindow):
             self.drawing_app.choose_color()
 
     def create_central_canvas(self):
-        self.canvas_widget = QTabWidget()
+        self.canvas_widget = QTabWidget()  # Tạo widget dạng tab để chứa khung vẽ.
 
-        # Set up the scene for DrawingApp
-        scene = QGraphicsScene(self)
-        scene.setSceneRect(0, 0, 2000, 2000)
-        self.drawing_app.scene = scene
-        self.drawing_app.drawing_window.setScene(scene)
+        # Thiết lập cảnh cho DrawingApp
+        scene = QGraphicsScene(self)  # Tạo một cảnh vẽ.
+        scene.setSceneRect(0, 0, 2000, 2000)  # Đặt kích thước cảnh.
+        self.drawing_app.scene = scene  # Gán cảnh cho DrawingApp.
+        self.drawing_app.drawing_window.setScene(scene)  # Đặt cảnh vào cửa sổ vẽ.
 
-        self.add_grid(scene)
-        self.canvas_widget.addTab(self.drawing_app.drawing_window, 'PCB Design')
-        self.setCentralWidget(self.canvas_widget)
+        # Tạo LayerManager
+        self.layer_manager = LayerManager(scene)
 
-    def add_grid(self, scene):
-        grid_color = QColor(240, 240, 240)
-        grid_spacing = 10
+        # # Thêm các layer
+        # self.layer_manager.add_layer("top_copper", QColor(240, 240, 240), z_index=-1)
+        # self.layer_manager.add_layer("bottom_copper", QColor(0, 0, 255), z_index=1)
+        # self.layer_manager.add_layer("top_mask", QColor(255, 0, 0), z_index=2)
+
+        # Thêm lưới vào layer "Grid"
+        self.add_grid(scene)  # Thêm lưới vào cảnh.
+        
+        self.canvas_widget.addTab(self.drawing_app.drawing_window, 'PCB Design')  # Thêm tab với tiêu đề "PCB Design".
+        self.setCentralWidget(self.canvas_widget)  # Đặt widget này làm khu vực trung tâm.
+
+    def add_grid(self, layer_name):
+        """
+        Thêm lưới vào layer được chỉ định.
+        :param layer_name: Tên của layer để thêm lưới.
+        """
+        grid_color = self.layer_manager.layers[layer_name]["color"]  # Lấy màu từ layer
+        grid_spacing = 10  # Khoảng cách giữa các đường lưới
+
+        # Vẽ các đường dọc
         for x in range(0, 2000, grid_spacing):
-            scene.addLine(x, 0, x, 2000, QPen(grid_color))
-        for y in range(0, 2000, grid_spacing):
-            scene.addLine(0, y, 2000, y, QPen(grid_color))
+            line = self.layer_manager.scene.addLine(x, 0, x, 2000, QPen(grid_color))
+            self.layer_manager.add_item_to_layer(layer_name, line)
 
+        # Vẽ các đường ngang
+        for y in range(0, 2000, grid_spacing):
+            line = self.layer_manager.scene.addLine(0, y, 2000, y, QPen(grid_color))
+            self.layer_manager.add_item_to_layer(layer_name, line)
     def create_left_sidebar(self):
         dock = QDockWidget('Component Library', self)
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
@@ -214,3 +276,6 @@ class main_app(QMainWindow):
             pad.setSelected(True)
         except Exception as e:
             self.show_error_message("Pad Creation Error", f"Error creating pad: {str(e)}")
+    def show_layer_count(self):
+        layer_count = self.layer_manager.get_layer_count()
+        print(f"Số lượng layer hiện tại: {layer_count}")
