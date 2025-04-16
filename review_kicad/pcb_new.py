@@ -21040,4 +21040,10 @@ class PCB_DIM_CENTER(PCB_DIMENSION_BASE):
     __swig_destroy__ = _pcbnew.delete_PCB_DIM_CENTER
  
 # Register PCB_DIM_CENTER in _pcbnew:
+<<<<<<< HEAD
 _pcbnew.PCB_DIM_CENTER_swigregister(PCB_DIM_CENTER)
+=======
+_pcbnew.PCB_DIM_CENTER_swigregister(PCB_DIM_CENTER)
+
+ 
+>>>>>>> 00be7effa72c810b69ebe7e30e3d73ac6792eb71
