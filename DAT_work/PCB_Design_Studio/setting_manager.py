@@ -34,26 +34,41 @@ class SettingsManager:
         Trả về cài đặt mặc định.
         """
         return {
-            "window_size": {"width": 1200, "height": 800},
-            "grid_color": "#F0F0F0",
-            "pad_color": "#0000FF",
-            "track_color": "#FF0000",
-            "recent_files": []
+            "layers": {
+                "TopPlacement": True,
+                "TopSilk": True,
+                "TopPattern": True,
+                "BottomPattern": True,
+                "BottomSilk": True,
+                "BottomPlacement": True
+            },
+            "objects": {
+                "show_grid": True,
+                "snap_to_grid": True
+            },
+            "pcb_print": {
+                "resolution": 300,
+                "color_mode": "Color"
+            }
         }
 
-    def get_setting(self, key, default=None):
+    def get_setting(self, category, key, default=None):
         """
         Lấy giá trị của một cài đặt.
+        :param category: Danh mục cài đặt (layers, objects, pcb_print).
         :param key: Tên cài đặt.
         :param default: Giá trị mặc định nếu cài đặt không tồn tại.
         """
-        return self.settings.get(key, default)
+        return self.settings.get(category, {}).get(key, default)
 
-    def set_setting(self, key, value):
+    def set_setting(self, category, key, value):
         """
         Đặt giá trị cho một cài đặt.
+        :param category: Danh mục cài đặt (layers, objects, pcb_print).
         :param key: Tên cài đặt.
         :param value: Giá trị cần đặt.
         """
-        self.settings[key] = value
+        if category not in self.settings:
+            self.settings[category] = {}
+        self.settings[category][key] = value
         self.save_settings()
