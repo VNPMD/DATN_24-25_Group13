@@ -3,7 +3,7 @@ from PyQt5.QtWidgets import (
     QMainWindow, QDockWidget, QTreeWidget, QTreeWidgetItem,
     QWidget, QGridLayout, QLabel, QLineEdit, QComboBox, QTabWidget,
     QGraphicsScene, QListWidget, QToolBar, QAction, QMessageBox,
-    QDialog, QPushButton
+    QDialog, QPushButton, QCheckBox, QVBoxLayout, QHBoxLayout
 )
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPen, QColor
@@ -12,11 +12,14 @@ from drawing import DrawingApp
 from pad_editor import PadEditor
 from pad import Pad
 from layer_manager import LayerManager
+from setting_manager import SettingsManager
+from settings_editor import SettingsEditor
 
 class main_app(QMainWindow):
     def __init__(self):
         try:
             super().__init__()  # Gọi hàm khởi tạo của lớp cha QMainWindow.
+            self.settings_manager = SettingsManager()  # Tạo một instance của lớp SettingsManager để quản lý cài đặt.
             self.setWindowTitle('PCB Design Studio')  # Đặt tiêu đề cho cửa sổ chính.
             self.setGeometry(100, 100, 1200, 800)  # Đặt vị trí và kích thước cửa sổ (x, y, width, height).
             self.drawing_app = DrawingApp()  # Tạo một instance của lớp DrawingApp (ứng dụng vẽ).
@@ -51,7 +54,7 @@ class main_app(QMainWindow):
         open_project_action = QAction('Open Project', self)  # Tạo hành động "Open Project".
         save_action = QAction('Save', self)  # Tạo hành động "Save".
         setting_action = QAction('Settings', self)  # Tạo hành động "Settings".
-        setting_action.triggered.connect(self.open_settings_dialog)  # Kết nối hành động với phương thức mở cài đặt.
+        setting_action.triggered.connect(self.show_settings_editor)  # Kết nối hành động với phương thức mở cài đặt.
         
         file_menu.addAction(new_project_action)  # Thêm hành động vào menu "File".
         file_menu.addAction(open_project_action)
@@ -72,42 +75,7 @@ class main_app(QMainWindow):
         design_menu.addAction(create_footprint_action)  # Thêm hành động vào menu "Design".
         design_menu.addAction(layer_manager_action)
         # Design tootbar 
-    def open_settings_dialog(self):
-        """
-        Hiển thị hộp thoại cài đặt.
-        """
-        dialog = QDialog(self)
-        dialog.setWindowTitle("Settings")
-        layout = QGridLayout(dialog)
-
-        # Cài đặt màu cho các layer
-        layer_settings_label = QLabel("Layer Settings:")
-        layout.addWidget(layer_settings_label, 0, 0, 1, 2)
-
-        # Tạo các trường nhập liệu cho từng layer
-        row = 1
-        self.layer_inputs = {}
-        toolbar = QToolBar('Layer Settings')  # Tạo thanh công cụ cho cài đặt layer.
-        self.addToolBar(toolbar)  # Thêm thanh công cụ vào cửa sổ chính.
-
-        for layer_name, layer_data in self.layer_manager.layers.items():
-            label = QLabel(f"{layer_name} Color:")
-            color_input = QLineEdit(layer_data["color"].name())  # Hiển thị màu hiện tại
-            color_input.triggered.connect(self.choose_drawing_color)  # Kết nối với hàm chọn màu
-            toolbar.addAction(color_input)  # Thêm hành động vào thanh công cụ
-
-            layout.addWidget(label, row, 0)
-            layout.addWidget(color_input, row, 1)
-            self.layer_inputs[layer_name] = color_input
-            row += 1
-
-        # Nút lưu
-        save_button = QPushButton("Save")
-        save_button.clicked.connect(lambda: self.save_layer_settings(dialog))
-        layout.addWidget(save_button, row, 0, 1, 2)
-
-        dialog.setLayout(layout)
-        dialog.exec_()
+   
     def create_toolbar(self):
         toolbar = QToolBar('Design Tools')  # Tạo thanh công cụ với tiêu đề "Design Tools".
         self.addToolBar(toolbar)  # Thêm thanh công cụ vào cửa sổ chính.
@@ -165,7 +133,7 @@ class main_app(QMainWindow):
         # self.layer_manager.add_layer("top_mask", QColor(255, 0, 0), z_index=2)
 
         # Thêm lưới vào layer "Grid"
-        self.add_grid(scene)  # Thêm lưới vào cảnh.
+        self.add_grid("top_copper")  # Thêm lưới vào cảnh.
         
         self.canvas_widget.addTab(self.drawing_app.drawing_window, 'PCB Design')  # Thêm tab với tiêu đề "PCB Design".
         self.setCentralWidget(self.canvas_widget)  # Đặt widget này làm khu vực trung tâm.
@@ -240,7 +208,15 @@ class main_app(QMainWindow):
         error_dialog.setText(message)
         error_dialog.setDetailedText(traceback.format_exc())
         error_dialog.exec_()
-
+    def show_settings_editor(self):
+        """
+        Hiển thị hộp thoại chỉnh sửa cài đặt.
+        """
+        try:
+            settings_editor = SettingsEditor(self.settings_manager, self)
+            settings_editor.exec_()  # Hiển thị hộp thoại
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to open Settings Editor: {str(e)}")
     def show_pad_editor(self):
         # Open the pad editor dialog
         try:
