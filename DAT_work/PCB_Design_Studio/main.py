@@ -1,11 +1,13 @@
 import sys
 from PyQt5.QtWidgets import QApplication, QMessageBox
-from main_app import main_app
+from main_app import main_app  # Corrected class name
 import traceback
+# from setting_manager import SettingsManager  # Ensure this is correctly defined in setting_manager.py
 
 def main():
     try:
         app = QApplication(sys.argv)  # Tạo ứng dụng PyQt
+        # settings_manager = SettingsManager()  # Initialize settings manager
         pcb_app = main_app()  # Khởi tạo ứng dụng chính
         pcb_app.showMaximized()  # Hiển thị ứng dụng ở chế độ toàn màn hình
         sys.exit(app.exec_())  # Chạy vòng lặp sự kiện chính

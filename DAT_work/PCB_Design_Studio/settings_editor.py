@@ -1,9 +1,12 @@
-from PyQt5.QtWidgets import QDockWidget, QTreeWidget, QTreeWidgetItem, QWidget, QVBoxLayout, QMainWindow, QMessageBox
+from PyQt5.QtWidgets import QDockWidget, QTreeWidget, QTreeWidgetItem, QWidget, QVBoxLayout, QMainWindow, QMessageBox,QDialog
+from PyQt5.QtGui import QIcon, QPixmap
 import PyQt5.QtCore as Qt
 import traceback
-class main_app(QMainWindow):
+from setting_manager import SettingsManager # Giả sử bạn đã định nghĩa setting_manager trong một tệp khác
+class SettingsEditor(QDialog):
     def __init__(self):
         super().__init__()
+        self.settings_manager = SettingsManager
         self.setWindowTitle("PCB Design Studio")
         self.setGeometry(100, 100, 1200, 800)
         self.init_ui()

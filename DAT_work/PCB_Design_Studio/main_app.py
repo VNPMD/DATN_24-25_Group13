@@ -11,15 +11,15 @@ from PyQt5.QtGui import QPen, QColor
 from drawing import DrawingApp
 from pad_editor import PadEditor
 from pad import Pad
-from layer_manager import LayerManager
-from setting_manager import SettingsManager
-from settings_editor import SettingsEditor
+# from layer_manager import LayerManager
+# from setting_manager import SettingsManager
+# from settings_editor import SettingsEditor
 
 class main_app(QMainWindow):
     def __init__(self):
         try:
             super().__init__()  # Gọi hàm khởi tạo của lớp cha QMainWindow.
-            self.settings_manager = SettingsManager()  # Tạo một instance của lớp SettingsManager để quản lý cài đặt.
+            # self.settings_manager = SettingsManager()  # Tạo một instance của lớp SettingsManager để quản lý cài đặt.
             self.setWindowTitle('PCB Design Studio')  # Đặt tiêu đề cho cửa sổ chính.
             self.setGeometry(100, 100, 1200, 800)  # Đặt vị trí và kích thước cửa sổ (x, y, width, height).
             self.drawing_app = DrawingApp()  # Tạo một instance của lớp DrawingApp (ứng dụng vẽ).
@@ -53,14 +53,14 @@ class main_app(QMainWindow):
         new_project_action = QAction('New Project', self)  # Tạo hành động "New Project".
         open_project_action = QAction('Open Project', self)  # Tạo hành động "Open Project".
         save_action = QAction('Save', self)  # Tạo hành động "Save".
-        setting_action = QAction('Settings', self)  # Tạo hành động "Settings".
-        setting_action.triggered.connect(self.show_settings_editor)  # Kết nối hành động với phương thức mở cài đặt.
+        # setting_action = QAction('Settings', self)  # Tạo hành động "Settings".
+        # setting_action.triggered.connect(self.show_settings_editor)  # Kết nối hành động với phương thức mở cài đặt.
         
         file_menu.addAction(new_project_action)  # Thêm hành động vào menu "File".
         file_menu.addAction(open_project_action)
         file_menu.addAction(save_action)
         file_menu.addSeparator()  # Thêm một đường phân cách.
-        file_menu.addAction(setting_action)  # Thêm hành động "Settings" vào menu "File".
+        # file_menu.addAction(setting_action)  # Thêm hành động "Settings" vào menu "File".
         # Edit Menu
         edit_menu = self.menubar.addMenu('Edit')  # Thêm menu "Edit".
         undo_action = QAction('Undo', self)  # Tạo hành động "Undo".
@@ -124,37 +124,43 @@ class main_app(QMainWindow):
         self.drawing_app.scene = scene  # Gán cảnh cho DrawingApp.
         self.drawing_app.drawing_window.setScene(scene)  # Đặt cảnh vào cửa sổ vẽ.
 
-        # Tạo LayerManager
-        self.layer_manager = LayerManager(scene)
+        # # Tạo LayerManager
+        # self.layer_manager = LayerManager(scene)
 
-        # # Thêm các layer
-        # self.layer_manager.add_layer("top_copper", QColor(240, 240, 240), z_index=-1)
-        # self.layer_manager.add_layer("bottom_copper", QColor(0, 0, 255), z_index=1)
-        # self.layer_manager.add_layer("top_mask", QColor(255, 0, 0), z_index=2)
-
-        # Thêm lưới vào layer "Grid"
-        self.add_grid("top_copper")  # Thêm lưới vào cảnh.
+    
+        # # Thêm lưới vào layer "Grid"
+        # self.add_grid("grid")  # Thêm lưới vào cảnh.
+        self.app_grid(scene)  # Thêm lưới vào cảnh.
         
         self.canvas_widget.addTab(self.drawing_app.drawing_window, 'PCB Design')  # Thêm tab với tiêu đề "PCB Design".
         self.setCentralWidget(self.canvas_widget)  # Đặt widget này làm khu vực trung tâm.
-
-    def add_grid(self, layer_name):
-        """
-        Thêm lưới vào layer được chỉ định.
-        :param layer_name: Tên của layer để thêm lưới.
-        """
-        grid_color = self.layer_manager.layers[layer_name]["color"]  # Lấy màu từ layer
-        grid_spacing = 10  # Khoảng cách giữa các đường lưới
-
-        # Vẽ các đường dọc
+    def add_grid(self, scene):
+        grid_color = QColor(240, 240, 240)
+        grid_spacing = 10
         for x in range(0, 2000, grid_spacing):
-            line = self.layer_manager.scene.addLine(x, 0, x, 2000, QPen(grid_color))
-            self.layer_manager.add_item_to_layer(layer_name, line)
-
-        # Vẽ các đường ngang
+            scene.addLine(x, 0, x, 2000, QPen(grid_color))
         for y in range(0, 2000, grid_spacing):
-            line = self.layer_manager.scene.addLine(0, y, 2000, y, QPen(grid_color))
-            self.layer_manager.add_item_to_layer(layer_name, line)
+            scene.addLine(0, y, 2000, y, QPen(grid_color))
+    # def add_grid(self, layer_name):
+    #     """
+    #     Thêm lưới vào layer được chỉ định.
+    #     :param layer_name: Tên của layer để thêm lưới.
+    #     """
+    #     grid_color = self.layer_manager.layers[layer_name]["color"]  # Lấy màu từ layer
+    #     grid_spacing = 10  # Khoảng cách giữa các đường lưới
+
+    #     # Vẽ các đường dọc
+    #     for x in range(0, 2000, grid_spacing):
+    #         line = self.layer_manager.scene.addLine(x, 0, x, 2000, QPen(grid_color))
+    #         self.layer_manager.add_item_to_layer(layer_name, line)
+
+    #     # Vẽ các đường ngang
+    #     for y in range(0, 2000, grid_spacing):
+    #         line = self.layer_manager.scene.addLine(0, y, 2000, y, QPen(grid_color))
+    #         self.layer_manager.add_item_to_layer(layer_name, line)
+
+
+
     def create_left_sidebar(self):
         dock = QDockWidget('Component Library', self)
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
@@ -208,15 +214,13 @@ class main_app(QMainWindow):
         error_dialog.setText(message)
         error_dialog.setDetailedText(traceback.format_exc())
         error_dialog.exec_()
-    def show_settings_editor(self):
-        """
-        Hiển thị hộp thoại chỉnh sửa cài đặt.
-        """
-        try:
-            settings_editor = SettingsEditor(self.settings_manager, self)
-            settings_editor.exec_()  # Hiển thị hộp thoại
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"Failed to open Settings Editor: {str(e)}")
+    # def show_settings_editor(self):
+    #     try:
+    #         from settings_editor import SettingsEditor  # Import moved inside the method
+    #         settings_editor = SettingsEditor(self.settings_manager, self)
+    #         settings_editor.exec_()
+    #     except Exception as e:
+    #         QMessageBox.critical(self, "Error", f"Failed to open Settings Editor: {str(e)}")
     def show_pad_editor(self):
         # Open the pad editor dialog
         try:
