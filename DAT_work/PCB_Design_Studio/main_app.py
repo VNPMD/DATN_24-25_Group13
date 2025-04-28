@@ -115,6 +115,7 @@ class main_app(QMainWindow):
         if hasattr(self, 'drawing_app'):
             self.drawing_app.choose_color()
 
+    '''
     def create_central_canvas(self):
         self.canvas_widget = QTabWidget()  # Tạo widget dạng tab để chứa khung vẽ.
 
@@ -132,6 +133,21 @@ class main_app(QMainWindow):
         # self.add_grid("grid")  # Thêm lưới vào cảnh.
         self.app_grid(scene)  # Thêm lưới vào cảnh.
         
+        self.canvas_widget.addTab(self.drawing_app.drawing_window, 'PCB Design')  # Thêm tab với tiêu đề "PCB Design".
+        self.setCentralWidget(self.canvas_widget)  # Đặt widget này làm khu vực trung tâm.
+    '''
+    def create_central_canvas(self):
+        self.canvas_widget = QTabWidget()  # Tạo widget dạng tab để chứa khung vẽ.
+
+        # Thiết lập cảnh cho DrawingApp
+        scene = QGraphicsScene(self)  # Tạo một cảnh vẽ.
+        scene.setSceneRect(0, 0, 2000, 2000)  # Đặt kích thước cảnh.
+        self.drawing_app.scene = scene  # Gán cảnh cho DrawingApp.
+        self.drawing_app.drawing_window.setScene(scene)  # Đặt cảnh vào cửa sổ vẽ.
+
+        # Thêm lưới vào cảnh
+        self.add_grid(scene)  # Thay thế self.app_grid(scene) bằng self.add_grid(scene)
+
         self.canvas_widget.addTab(self.drawing_app.drawing_window, 'PCB Design')  # Thêm tab với tiêu đề "PCB Design".
         self.setCentralWidget(self.canvas_widget)  # Đặt widget này làm khu vực trung tâm.
     def add_grid(self, scene):
