@@ -10,12 +10,12 @@ class LayerManager:
         self.scene = scene
         self.layers = {}  # Dictionary để lưu các layer theo tên
         # Thêm các layer mặc định
-        self.add_layer("top_copper", QColor(240, 240, 240), z_index=-3)
-        self.add_layer("bottom_copper", QColor(0, 0, 255), z_index=-2)
-        self.add_layer("top_mark", QColor(255, 0, 0), z_index=-1)
-        self.add_layer("bottom_mark", QColor(0, 255, 0), z_index=0)
-        self.add_layer("top_paste", QColor(255, 255, 0), z_index=1)
-        self.add_layer("bottom_paste", QColor(255, 165, 0), z_index=2)
+        self.add_layer("Top_Copper", QColor(240, 240, 240), z_index=-3)
+        self.add_layer("Bottom_Copper", QColor(0, 0, 255), z_index=-2)
+        self.add_layer("Top_Mark", QColor(255, 0, 0), z_index=-1)
+        self.add_layer("Bottom_Mark", QColor(0, 255, 0), z_index=0)
+        self.add_layer("Top_Paste", QColor(255, 255, 0), z_index=1)
+        self.add_layer("Bottom_Paste", QColor(255, 165, 0), z_index=2)
 
     def add_layer(self, layer_name: str, color: QColor = QColor(0, 0, 0), z_index: int = 0):
         """
