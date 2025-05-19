@@ -6,11 +6,12 @@ from PyQt5.QtWidgets import (
     QDialog, QPushButton, QCheckBox, QVBoxLayout, QHBoxLayout
 )
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPen, QColor
-
+from PyQt5.QtGui import QPen, QColor, QIcon
+from Demo1_test_layer import LayerViewer
 from drawing import DrawingApp
 from pad_editor import PadEditor
 from pad import Pad
+from settings_dialog import SettingsDialog
 # from layer_manager import LayerManager
 # from setting_manager import SettingsManager
 # from settings_editor import SettingsEditor
@@ -197,21 +198,60 @@ class main_app(QMainWindow):
     def create_right_sidebar(self):
         dock = QDockWidget('Properties', self)
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
-        properties_widget = QWidget()
-        layout = QGridLayout()
-        properties = [
-            ('Component Type:', QComboBox()),
-            ('Footprint:', QLineEdit()),
-            ('Value:', QLineEdit()),
-            ('Tolerance:', QComboBox())
-        ]
-        for i, (label, widget) in enumerate(properties):
-            layout.addWidget(QLabel(label), i, 0)
-            layout.addWidget(widget, i, 1)
-        properties_widget.setLayout(layout)
-        dock.setWidget(properties_widget)
-        self.addDockWidget(Qt.RightDockWidgetArea, dock)
 
+        # Widget chính cho dock
+        main_widget = QWidget()
+        main_layout = QVBoxLayout(main_widget)
+        main_layout.setContentsMargins(0, 0, 0, 0)
+        main_layout.setSpacing(0)
+
+        # Stack để chuyển đổi giữa các phần (LayerViewer, NetViewer, ...)
+        from Demo1_test_layer import LayerViewer
+        self.layer_viewer = LayerViewer()
+        # Nếu có các viewer khác, bạn có thể thêm vào đây
+        # self.net_viewer = NetViewer()
+        # self.constraint_viewer = ConstraintViewer()
+
+        from PyQt5.QtWidgets import QStackedWidget
+        self.properties_stack = QStackedWidget()
+        self.properties_stack.addWidget(self.layer_viewer)
+        # self.properties_stack.addWidget(self.net_viewer)
+        # self.properties_stack.addWidget(self.constraint_viewer)
+        main_layout.addWidget(self.properties_stack)
+
+        # Thanh icon dưới đáy
+        icon_bar = QHBoxLayout()
+        icon_bar.setContentsMargins(0, 0, 0, 0)
+        icon_bar.setSpacing(0)
+
+        # Nút Layer
+        btn_layer = QPushButton()
+        btn_layer.setIcon(QIcon("icons/layer.png"))  # Đặt đường dẫn icon phù hợp
+        btn_layer.setToolTip("Layer")
+        btn_layer.clicked.connect(lambda: self.properties_stack.setCurrentIndex(0))
+        icon_bar.addWidget(btn_layer)
+
+        # Nút Net (nếu có)
+        # btn_net = QPushButton()
+        # btn_net.setIcon(QIcon("icons/net.png"))
+        # btn_net.setToolTip("Net")
+        # btn_net.clicked.connect(lambda: self.properties_stack.setCurrentIndex(1))
+        # icon_bar.addWidget(btn_net)
+
+        # Nút Constraint (nếu có)
+        # btn_constraint = QPushButton()
+        # btn_constraint.setIcon(QIcon("icons/constraint.png"))
+        # btn_constraint.setToolTip("Constraint")
+        # btn_constraint.clicked.connect(lambda: self.properties_stack.setCurrentIndex(2))
+        # icon_bar.addWidget(btn_constraint)
+
+        # Widget chứa icon bar
+        icon_bar_widget = QWidget()
+        icon_bar_widget.setLayout(icon_bar)
+        main_layout.addWidget(icon_bar_widget)
+
+        dock.setWidget(main_widget)
+        self.addDockWidget(Qt.RightDockWidgetArea, dock)
     def create_bottom_panel(self):
         dock = QDockWidget('Messages', self)
         dock.setAllowedAreas(Qt.BottomDockWidgetArea)
@@ -251,6 +291,9 @@ class main_app(QMainWindow):
             print(f"Error in pad editor: {str(e)}\n{traceback_str}")
             self.show_error_message("Pad Editor Error", f"Error in pad editor: {str(e)}")
 
+    def open_settings(self):
+        dlg = SettingsDialog(self)
+        dlg.exec_()
     def add_pad_to_design(self, pad_data):
         # Add a pad to the PCB design
         try:

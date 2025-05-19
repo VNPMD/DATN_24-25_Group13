@@ -63,7 +63,6 @@ class LayerViewer(QMainWindow):
         """
         Populate the tree widget with layers and their controls.
         """
-        # Example parent layers
         parent_layers = ["Top", "Bottom"]
         child_layers = [
             {"name": "Silk", "color": QColor("lightgray")},
@@ -89,21 +88,17 @@ class LayerViewer(QMainWindow):
             parent_item.setText(0, parent_name)
 
             for child in child_layers:
-                # Extract child name and layer data
                 child_name = child["name"]
                 layer_color = child["color"]
 
-                # Create a child item
                 child_item = QTreeWidgetItem(parent_item)
                 child_item.setText(0, child_name)
 
-                # Add a color label with a click event to change the color
                 color_label = QLabel()
                 color_label.setStyleSheet(f"background-color: {layer_color.name()};")
                 color_label.mousePressEvent = self.create_color_change_handler(child_name, color_label)
                 self.layer_tree.setItemWidget(child_item, 1, color_label)
 
-                # Add a visibility checkbox
                 visibility_widget = QWidget()
                 visibility_layout = QHBoxLayout(visibility_widget)
                 visibility_layout.setContentsMargins(0, 0, 0, 0)
@@ -112,8 +107,6 @@ class LayerViewer(QMainWindow):
                 visibility_checkbox.setChecked(True)
                 visibility_layout.addWidget(visibility_checkbox)
                 self.layer_tree.setItemWidget(child_item, 2, visibility_widget)
-
-                # Add a lock checkbox
                 lock_widget = QWidget()
                 lock_layout = QHBoxLayout(lock_widget)
                 lock_layout.setContentsMargins(0, 0, 0, 0)
@@ -122,6 +115,9 @@ class LayerViewer(QMainWindow):
                 lock_checkbox.setChecked(False)
                 lock_layout.addWidget(lock_checkbox)
                 self.layer_tree.setItemWidget(child_item, 3, lock_widget)
+
+            # Luôn mở rộng nhóm parent (Top/Bottom)
+            self.layer_tree.expandItem(parent_item)
 if __name__ == "__main__":
     import sys
     app = QApplication(sys.argv)

@@ -12,133 +12,101 @@ class LayerViewer(QMainWindow):
         self.setWindowTitle("Layer Viewer")
         self.setGeometry(100, 100, 1200, 800)
 
-        # Create a QGraphicsScene
-
-        # Initialize variables for drawing
-        self.current_layer = "Top_copper"  # Default layer for drawing
+        # Khởi tạo biến vẽ
+        self.current_layer = "top_copper"  # Default layer for drawing
         self.drawing = False
         self.start_point = QPointF()
         self.drawing_enabled = True  # Toggle for enabling/disabling drawing
+        self.drawing_mode = "line"
 
         # Create a QGraphicsScene
         self.scene = QGraphicsScene(self)
         self.scene.setSceneRect(0, 0, 1000, 1000)
 
-        # Initialize LayerManager with the scene
+        # LayerManager
         self.layer_manager = LayerManager(self.scene)
 
-        # Create a QGraphicsView to display the scene
+        # QGraphicsView
         self.view = QGraphicsView(self.scene, self)
         self.setCentralWidget(self.view)
 
-        # Create a dockable widget for layer controls
+        # Layer controls
         self.create_layer_controls()
 
-        # Create a toolbar for drawing tools
+        # Toolbar
         self.create_toolbar()
 
-        # Variables for drawing
-        self.current_layer = "Top_copper"  # Default layer for drawing
-        self.drawing = False
-        self.start_point = QPointF()
-        self.drawing_enabled = True  # Toggle for enabling/disabling drawing
-
     def create_layer_controls(self):
-        """
-        Create a dockable widget for layer selection and controls.
-        """
         dock = QDockWidget("Layer Controls", self)
         dock.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
 
-        # Create a widget to hold the controls
         dock_widget = QWidget()
         layout = QVBoxLayout()
 
-        # Create a tree widget for layers
         self.layer_tree = QTreeWidget()
         self.layer_tree.setHeaderLabels(["Layer", "Color", "Visible", "Lock"])
-        self.layer_tree.setColumnWidth(0, 150)  # Width for "Layer"
-        self.layer_tree.setColumnWidth(1, 50)   # Width for "Color"
-        self.layer_tree.setColumnWidth(2, 50)   # Width for "Visible"
-        self.layer_tree.setColumnWidth(3, 50)   # Width for "Lock"
-
-
-        # Align headers to the center
-        header = self.layer_tree.header()
-        header.setDefaultAlignment(Qt.AlignCenter)
+        self.layer_tree.setColumnWidth(0, 150)
+        self.layer_tree.setColumnWidth(1, 50)
+        self.layer_tree.setColumnWidth(2, 50)
+        self.layer_tree.setColumnWidth(3, 50)
+        self.layer_tree.header().setDefaultAlignment(Qt.AlignCenter)
 
         self.populate_layer_tree()
         layout.addWidget(self.layer_tree)
 
-        # Create a dropdown (QComboBox) for selecting the active layer
         self.layer_selector = QComboBox(self)
-        self.layer_selector.addItems(self.layer_manager.layers.keys())  # Add all layer names to the dropdown
+        self.layer_selector.addItems(self.layer_manager.layers.keys())
         self.layer_selector.currentTextChanged.connect(self.on_layer_selected)
         layout.addWidget(self.layer_selector)
 
-        # Set the layout for the dock widget
         dock_widget.setLayout(layout)
         dock.setWidget(dock_widget)
-
-        # Add the dock to the main window
         self.addDockWidget(Qt.LeftDockWidgetArea, dock)
 
     def create_toolbar(self):
-        """
-        Create a toolbar for drawing tools.
-        """
         toolbar = QToolBar("Drawing Tools", self)
         self.addToolBar(Qt.TopToolBarArea, toolbar)
 
-        # Toggle drawing mode
         toggle_drawing_action = QAction(QIcon(), "Toggle Drawing", self)
         toggle_drawing_action.setCheckable(True)
         toggle_drawing_action.setChecked(self.drawing_enabled)
         toggle_drawing_action.triggered.connect(self.toggle_drawing_mode)
         toolbar.addAction(toggle_drawing_action)
 
-        # Clear the scene
         clear_scene_action = QAction(QIcon(), "Clear Scene", self)
         clear_scene_action.triggered.connect(self.clear_scene)
         toolbar.addAction(clear_scene_action)
 
-        # Switch to line drawing mode
         line_mode_action = QAction(QIcon(), "Draw Line", self)
         line_mode_action.triggered.connect(lambda: self.set_drawing_mode("line"))
         toolbar.addAction(line_mode_action)
 
-        # Switch to circle drawing mode
         circle_mode_action = QAction(QIcon(), "Draw Circle", self)
         circle_mode_action.triggered.connect(lambda: self.set_drawing_mode("circle"))
         toolbar.addAction(circle_mode_action)
 
     def set_drawing_mode(self, mode):
-        """
-        Set the drawing mode (line or circle).
-        """
         self.drawing_mode = mode
 
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton and self.drawing_enabled:
+            self.drawing = True
+            self.start_point = self.view.mapToScene(event.pos())
+
     def mouseReleaseEvent(self, event):
-        """
-        Handle mouse release events for drawing.
-        """
         if event.button() == Qt.LeftButton and self.drawing and self.drawing_enabled:
             self.drawing = False
             end_point = self.view.mapToScene(event.pos())
 
+            pen = QPen(self.layer_manager.layers[self.current_layer]["color"])
             if self.drawing_mode == "line":
-                # Draw a line on the current layer
-                pen = QPen(self.layer_manager.layers[self.current_layer]["color"])
                 line = self.scene.addLine(
                     self.start_point.x(), self.start_point.y(),
                     end_point.x(), end_point.y(),
                     pen
                 )
                 self.layer_manager.add_item_to_layer(self.current_layer, line)
-
             elif self.drawing_mode == "circle":
-                # Draw a circle on the current layer
-                pen = QPen(self.layer_manager.layers[self.current_layer]["color"])
                 radius = ((end_point.x() - self.start_point.x()) ** 2 + (end_point.y() - self.start_point.y()) ** 2) ** 0.5
                 circle = self.scene.addEllipse(
                     self.start_point.x() - radius, self.start_point.y() - radius,
@@ -146,11 +114,8 @@ class LayerViewer(QMainWindow):
                     pen
                 )
                 self.layer_manager.add_item_to_layer(self.current_layer, circle)
+
     def populate_layer_tree(self):
-        """
-        Populate the tree widget with layers and their controls.
-        """
-        # Example parent layers
         parent_layers = ["Top", "Bottom"]
         child_layers = [
             {"name": "Silk", "color": QColor("lightgray")},
@@ -171,36 +136,31 @@ class LayerViewer(QMainWindow):
         ]
 
         for parent_name in parent_layers:
-            # Create a parent item
             parent_item = QTreeWidgetItem(self.layer_tree)
             parent_item.setText(0, parent_name)
-
             for child in child_layers:
-                # Extract child name and layer data
                 child_name = child["name"]
                 layer_color = child["color"]
-
-                # Create a child item
                 child_item = QTreeWidgetItem(parent_item)
                 child_item.setText(0, child_name)
 
-                # Add a color label with a click event to change the color
                 color_label = QLabel()
                 color_label.setStyleSheet(f"background-color: {layer_color.name()};")
                 color_label.mousePressEvent = self.create_color_change_handler(child_name, color_label)
                 self.layer_tree.setItemWidget(child_item, 1, color_label)
 
-                # Add a visibility checkbox
                 visibility_widget = QWidget()
                 visibility_layout = QHBoxLayout(visibility_widget)
                 visibility_layout.setContentsMargins(0, 0, 0, 0)
                 visibility_layout.setAlignment(Qt.AlignCenter)
                 visibility_checkbox = QCheckBox()
                 visibility_checkbox.setChecked(True)
+                visibility_checkbox.stateChanged.connect(
+                    lambda state, name=child_name: self.toggle_layer_visibility(name, state)
+                )
                 visibility_layout.addWidget(visibility_checkbox)
                 self.layer_tree.setItemWidget(child_item, 2, visibility_widget)
 
-                # Add a lock checkbox
                 lock_widget = QWidget()
                 lock_layout = QHBoxLayout(lock_widget)
                 lock_layout.setContentsMargins(0, 0, 0, 0)
@@ -211,89 +171,38 @@ class LayerViewer(QMainWindow):
                 self.layer_tree.setItemWidget(child_item, 3, lock_widget)
 
     def create_color_change_handler(self, layer_name, color_label):
-        """
-        Returns a function that opens a QColorDialog and updates the color label.
-        """
         def handler(event):
             new_color = QColorDialog.getColor()
             if new_color.isValid():
                 color_label.setStyleSheet(f"background-color: {new_color.name()};")
-                print(f"Layer '{layer_name}' color changed to {new_color.name()}")
+                # Update color in LayerManager if exists
+                if layer_name in self.layer_manager.layers:
+                    self.layer_manager.layers[layer_name]["color"] = new_color
+                    for item in self.layer_manager.layers[layer_name]["items"]:
+                        if hasattr(item, "setBrush"):
+                            item.setBrush(new_color)
+                        elif hasattr(item, "setPen"):
+                            pen = item.pen()
+                            pen.setColor(new_color)
+                            item.setPen(pen)
         return handler
 
-    def change_layer_color(self, layer_name, color_label):
-        """
-        Open a color dialog to change the color of the selected layer.
-        """
-        color = QColorDialog.getColor()
-        if color.isValid():
-            # Update the layer's color
-            self.layer_manager.layers[layer_name]["color"] = color
-
-            # Update the color label in the tree
-            color_label.setStyleSheet(f"background-color: {color.name()};")
-
-            # Update the color of all items in the layer
-            for item in self.layer_manager.layers[layer_name]["items"]:
-                if hasattr(item, "setBrush"):  # Check if the item supports setting a brush
-                    item.setBrush(color)
-                elif hasattr(item, "setPen"):  # Check if the item supports setting a pen
-                    pen = item.pen()
-                    pen.setColor(color)
-                    item.setPen(pen)
-
     def toggle_layer_visibility(self, layer_name, state):
-        """
-        Toggle the visibility of a layer.
-        """
         visible = state == Qt.Checked
-        for item in self.layer_manager.layers[layer_name]["items"]:
-            item.setVisible(visible)
+        if layer_name in self.layer_manager.layers:
+            for item in self.layer_manager.layers[layer_name]["items"]:
+                item.setVisible(visible)
 
     def on_layer_selected(self, layer_name):
-        """
-        Handle layer selection from the dropdown.
-        """
-        self.current_layer = layer_name  # Update the current layer for drawing
+        self.current_layer = layer_name
 
     def toggle_drawing_mode(self, enabled):
-        """
-        Enable or disable drawing mode.
-        """
         self.drawing_enabled = enabled
 
     def clear_scene(self):
-        """
-        Clear all items from the scene.
-        """
         self.scene.clear()
         for layer in self.layer_manager.layers.values():
             layer["items"].clear()
-
-    def mousePressEvent(self, event):
-        """
-        Handle mouse press events for drawing.
-        """
-        if event.button() == Qt.LeftButton and self.drawing_enabled:
-            self.drawing = True
-            self.start_point = self.view.mapToScene(event.pos())
-
-    def mouseReleaseEvent(self, event):
-        """
-        Handle mouse release events for drawing.
-        """
-        if event.button() == Qt.LeftButton and self.drawing and self.drawing_enabled:
-            self.drawing = False
-            end_point = self.view.mapToScene(event.pos())
-
-            # Draw a line on the current layer
-            pen = QPen(self.layer_manager.layers[self.current_layer]["color"])
-            line = self.scene.addLine(
-                self.start_point.x(), self.start_point.y(),
-                end_point.x(), end_point.y(),
-                pen
-            )
-            self.layer_manager.add_item_to_layer(self.current_layer, line)
 
 if __name__ == "__main__":
     import sys
