@@ -6,6 +6,25 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QPixmap
 
+# Danh sách vật liệu mặc định
+DEFAULT_CONDUCTOR = [
+    ("Copper", "59"),
+    ("Tin", "7.9"),
+    ("Aluminum", "37.4"),
+    ("Platinum", "9.4"),
+    ("Gold", "45.5"),
+    ("Iron", "19.6"),
+    ("Silver", "61.4"),
+]
+DEFAULT_INSULATOR = [
+    ("Air", "4.6", "0"),
+    ("FR2", "4.6", "0"),
+    ("FR3", "4.6", "0"),
+    ("FR4", "4.6", "0.018"),
+    ("FR5", "4.6", "0"),
+    ("G10", "5.2", "0"),
+    ("G11", "5.2", "0"),
+]
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -95,7 +114,18 @@ class SettingsDialog(QDialog):
             for col, value in enumerate(row_data):
                 self.table.setItem(row, col, QTableWidgetItem(value))
         self.table.setMinimumHeight(180)
+        self.refresh_material_comboboxes()
         tab_layout.addWidget(self.table)
+
+          # Danh sách vật liệu
+        self.conductor_materials = list(DEFAULT_CONDUCTOR)
+        self.insulator_materials = list(DEFAULT_INSULATOR)
+
+        
+
+        # Kết nối nút Material Settings
+        self.btn_material.clicked.connect(self.open_material_settings)
+
 
         # Nút Add, Delete, Layers, No. Layers, Material Settings
         btn_layout = QHBoxLayout()
@@ -152,12 +182,43 @@ class SettingsDialog(QDialog):
         right_widget = QWidget()
         right_widget.setLayout(right_panel)
         main_layout.addWidget(right_widget, 1)
+    def refresh_material_comboboxes(self):
+        """
+        Đặt lại combobox vật liệu cho từng dòng conductor/insulator.
+        """
+        for row in range(self.table.rowCount()):
+            type_item = self.table.item(row, 2)
+            if not type_item:
+                continue
+            if type_item.text() == "Conductor":
+                combo = QComboBox()
+                for name, _ in self.conductor_materials:
+                    combo.addItem(name)
+                # Set current value
+                current = self.table.item(row, 4).text() if self.table.item(row, 4) else ""
+                idx = combo.findText(current)
+                if idx >= 0:
+                    combo.setCurrentIndex(idx)
+                combo.currentTextChanged.connect(lambda text, r=row: self.table.setItem(r, 4, QTableWidgetItem(text)))
+                self.table.setCellWidget(row, 4, combo)
+            elif type_item.text() == "Insulator":
+                combo = QComboBox()
+                for name, *_ in self.insulator_materials:
+                    combo.addItem(name)
+                current = self.table.item(row, 4).text() if self.table.item(row, 4) else ""
+                idx = combo.findText(current)
+                if idx >= 0:
+                    combo.setCurrentIndex(idx)
+                combo.currentTextChanged.connect(lambda text, r=row: self.table.setItem(r, 4, QTableWidgetItem(text)))
+                self.table.setCellWidget(row, 4, combo)
+
     def add_physical_layer(self, update_spinbox=True):
         row_count = self.table.rowCount()
         insert_row = row_count - 1 if row_count > 1 else row_count
         conductor_data = ["noname", "0.035", "Conductor", "Route", "Copper", "59", "---", "---"]
         insulator_data = ["", "0.2", "Insulator", "Route", "FR4", "---", "4.6", "0.018"]
         self.table.insertRow(insert_row)
+        self.refresh_material_comboboxes()
         for col, value in enumerate(conductor_data):
             item = QTableWidgetItem(value)
             if col == 0:
@@ -173,9 +234,9 @@ class SettingsDialog(QDialog):
             self.spin_num_layers.setValue(self.count_physical_layers())
         self.table.editItem(self.table.item(insert_row, 0))
     def count_physical_layers(self):
-        # Đếm số conductor ở giữa (không tính Top/Bottom)
+        # Đếm số conductor (bao gồm cả Top và Bottom)
         count = 0
-        for row in range(1, self.table.rowCount() - 1):
+        for row in range(self.table.rowCount()):
             if self.table.item(row, 2) and self.table.item(row, 2).text() == "Conductor":
                 count += 1
         return count
@@ -183,6 +244,7 @@ class SettingsDialog(QDialog):
         """
         Đặt lại số lớp vật lý conductor/insulator ở giữa Top và Bottom.
         """
+        self.refresh_material_comboboxes()
         # Đếm số conductor hiện tại
         current = self.count_physical_layers()
         while current < num_layers:
@@ -205,10 +267,18 @@ class SettingsDialog(QDialog):
         # Số lớp vật lý là tổng số dòng trừ 2 (Top, Bottom)
         num_layers = max(0, self.table.rowCount() - 2)
         self.lbl_num_layers.setText(f"No. Layers: {num_layers}")
+    
+    def open_material_settings(self):
+        dlg = MaterialSettingsDialog(self.conductor_materials, self.insulator_materials, self)
+        if dlg.exec_():
+            self.conductor_materials, self.insulator_materials = dlg.get_materials()
+            self.refresh_material_comboboxes()
+
     def delete_physical_layer(self):
         """
         Xoá một cặp physical layer (Conductor + Insulator) ở giữa Top và Bottom.
         """
+        self.refresh_material_comboboxes()
         selected = self.table.currentRow()
         row_count = self.table.rowCount()
         if selected <= 0 or selected >= row_count - 1:
@@ -232,6 +302,56 @@ class SettingsDialog(QDialog):
                 self.table.removeRow(selected - 1)  # Xoá conductor
 
         self.update_num_layers()
+class MaterialSettingsDialog(QDialog):
+        def __init__(self, conductor_materials, insulator_materials, parent=None):
+            super().__init__(parent)
+            self.setWindowTitle("Material Settings")
+            self.resize(600, 300)
+            layout = QHBoxLayout(self)
+
+            # Conductor
+            self.table_conductor = QTableWidget(len(conductor_materials), 2)
+            self.table_conductor.setHorizontalHeaderLabels(["Material Name", "Electric Conductivity"])
+            for row, (name, cond) in enumerate(conductor_materials):
+                self.table_conductor.setItem(row, 0, QTableWidgetItem(name))
+                self.table_conductor.setItem(row, 1, QTableWidgetItem(cond))
+            layout.addWidget(self.table_conductor)
+
+            # Insulator
+            self.table_insulator = QTableWidget(len(insulator_materials), 3)
+            self.table_insulator.setHorizontalHeaderLabels(["Material Name", "Dielectric Constant", "Dielectric Loss Tanger"])
+            for row, (name, const, loss) in enumerate(insulator_materials):
+                self.table_insulator.setItem(row, 0, QTableWidgetItem(name))
+                self.table_insulator.setItem(row, 1, QTableWidgetItem(const))
+                self.table_insulator.setItem(row, 2, QTableWidgetItem(loss))
+            layout.addWidget(self.table_insulator)
+
+            # OK/Cancel
+            btn_layout = QVBoxLayout()
+            btn_ok = QPushButton("OK")
+            btn_cancel = QPushButton("Cancel")
+            btn_ok.clicked.connect(self.accept)
+            btn_cancel.clicked.connect(self.reject)
+            btn_layout.addWidget(btn_ok)
+            btn_layout.addWidget(btn_cancel)
+            layout.addLayout(btn_layout)
+
+        def get_materials(self):
+            # Lấy lại danh sách vật liệu từ bảng
+            conductor = []
+            for row in range(self.table_conductor.rowCount()):
+                name = self.table_conductor.item(row, 0)
+                cond = self.table_conductor.item(row, 1)
+                if name and cond:
+                    conductor.append((name.text(), cond.text()))
+            insulator = []
+            for row in range(self.table_insulator.rowCount()):
+                name = self.table_insulator.item(row, 0)
+                const = self.table_insulator.item(row, 1)
+                loss = self.table_insulator.item(row, 2)
+                if name and const and loss:
+                    insulator.append((name.text(), const.text(), loss.text()))
+            return conductor, insulator
 if __name__ == "__main__":
     from PyQt5.QtWidgets import QApplication
     import sys
